@@ -464,3 +464,9 @@ Important scenarios to test:
 ## License
 
 This project is available under the MIT License.
+---
+
+## 💖 Sponsorship & Maintenance
+Maintaining financial integrations, edge-case unit tests, and mock sandbox environments requires continuous maintenance. If this architecture reference or codebase helps your team build resilient checkout flows:
+
+👉 **[Support ongoing open-source development via GitHub Sponsors](https://github.com/sponsors/DeborahPanzer)**
