@@ -1,3 +1,17 @@
+<div align="center">
+
+# 🛍️ Checkout-
+
+> High-availability, resilient e-commerce checkout session orchestrator with multi-layer separation of concerns.
+
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20%7C%20Idempotent-2ea44f)](#)
+[![Sponsor](https://img.shields.io/badge/Sponsor-DeborahPanzer-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/DeborahPanzer)
+
+</div>
+
+---
+
 # Checkout Demo
 
 A modern checkout demo built to showcase a clean, scalable, and maintainable e-commerce checkout architecture.
@@ -463,7 +477,7 @@ Important scenarios to test:
 
 ## License
 
-This project is available under the MIT License.
+This project is available under the Apache 2.0 License.
 ---
 
 ## 💖 Sponsorship & Maintenance
