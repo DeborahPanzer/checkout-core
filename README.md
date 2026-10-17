@@ -13,29 +13,29 @@
 
 ---
 
-A modern checkout engine built to showcase a clean, scalable, and fault-tolerant e-commerce checkout architecture.
+# Checkout Demo
 
-> **Note:** This project is intended for demonstration, architectural benchmarking, and development purposes. It does not process real payments unless a production payment gateway provider is configured.
+A modern checkout demo built to showcase a clean, scalable, and maintainable e-commerce checkout architecture.
 
----
+> This project is intended for demonstration and development purposes. It does not process real payments unless a payment provider is properly configured.
 
 ## Features
 
-* Customer information validation & sanitization
-* Shipping address and tier management
-* Dynamic order & line-item calculation engine
-* Promotional coupon & discount rule verification
-* Provider-agnostic payment gateway adapters
-* Client-side and server-side schema validation
-* Mock transaction orchestrator with edge-case simulator
-* Fully responsive, accessible checkout user interface
-* State-machine driven order & payment lifecycle tracking
-
----
+* Customer information form
+* Shipping address management
+* Shipping method selection
+* Order summary
+* Discount code support
+* Multiple payment methods
+* Client-side and server-side validation
+* Mock payment processing
+* Payment success and failure pages
+* Responsive checkout interface
+* Order status management
 
 ## Technical Architecture
 
-The project separates presentation, business orchestration, data persistence, and third-party payment gateways into decoupled layers.
+The project separates the user interface, business logic, data access, and payment integration into independent layers.
 
 ```mermaid
 flowchart TD
@@ -56,4 +56,46 @@ flowchart TD
     PaymentAdapter --> Provider[Payment Provider]
     Provider --> Webhook[Webhook Handler]
     Webhook --> OrderService
+### API Layer
 
+The API layer acts as the communication point between the frontend and backend services.
+
+Its responsibilities include:
+
+* Validating incoming requests
+* Sanitizing customer input
+* Verifying the checkout session
+* Preventing duplicate submissions
+* Calling checkout services
+* Returning standardized responses
+* Handling errors securely
+
+Example endpoint:
+
+```http
+POST /api/checkout
+## Checkout Sequence
+
+```mermaid
+sequenceDiagram
+    participant Customer
+    participant Frontend
+    participant API
+    participant CheckoutService
+    participant OrderService
+    participant PaymentGateway
+    participant PaymentProvider
+
+    Customer->>Frontend: Submit checkout form
+    Frontend->>API: POST /api/checkout
+    API->>CheckoutService: Process checkout
+    CheckoutService->>CheckoutService: Validate cart and calculate total
+    CheckoutService->>OrderService: Create pending order
+    OrderService-->>CheckoutService: Return order
+    CheckoutService->>PaymentGateway: Create payment
+    PaymentGateway->>PaymentProvider: Initialize transaction
+    PaymentProvider-->>PaymentGateway: Return payment status
+    PaymentGateway-->>CheckoutService: Return payment result
+    CheckoutService-->>API: Return checkout response
+    API-->>Frontend: Order and payment result
+    Frontend-->>Customer: Show success or failure page
