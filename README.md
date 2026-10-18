@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛍️ Checkout-
+# 🛍️ Checkout-core
 
 > High-availability, resilient e-commerce checkout session orchestrator with multi-layer separation of concerns.
 
@@ -105,9 +105,11 @@ Example request:
     "phone": "+1-212-555-0199"
   },
   "shippingAddress": {
-    "address": "123 Main Street",
+    "address": "123 Main Street, Apt 4B",
     "city": "New York",
-    "country": "United States"
+    "state": "NY",
+    "postalCode": "10001",
+    "country": "US"
   },
   "shippingMethod": "standard",
   "paymentMethod": "mock_card",
@@ -119,6 +121,7 @@ Example request:
     }
   ]
 }
+
 ```
 
 ### Checkout Service
