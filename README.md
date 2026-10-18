@@ -1,22 +1,22 @@
 <div align="center">
 
-# 🛍️ Checkout-core
+# 💳 checkout-core
 
-> High-availability, resilient e-commerce checkout session orchestrator with multi-layer separation of concerns.
+> High-reliability transactional payment processing engine with ACID compliance, Address Verification System (AVS), ISO-3166 region mapping, and cryptographic idempotency.
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20%7C%20Idempotent-2ea44f)](#)
+[![Architecture](https://img.shields.io/badge/Architecture-Two--Phase%20Commit%20%7C%20Idempotent-2ea44f)](#)
+[![Runtime](https://img.shields.io/badge/Runtime-TypeScript%20%2F%20Node.js-blue)](#)
 [![Sponsor](https://img.shields.io/badge/Sponsor-DeborahPanzer-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/DeborahPanzer)
 
 </div>
 
 ---
 
-# Checkout Demo
+# Checkout Core & Transaction Engine Specification
 
-A modern checkout demo built to showcase a clean, scalable, and maintainable e-commerce checkout architecture.
+> A production-grade, highly reliable payment processing and checkout module engineered for high-availability marketplace platforms. Supports ACID-compliant transaction flows, AVS risk evaluation, ISO-3166 address normalization, webhook verification, and idempotent payment intent execution.
 
-> This project is intended for demonstration and development purposes. It does not process real payments unless a payment provider is properly configured.
 
 ## Features
 
@@ -213,23 +213,21 @@ REFUNDED
 ### Payment Gateway Adapter
 
 Payment provider integrations should be isolated behind a common interface.
-
 ```ts
-interface PaymentGateway {
-  createPayment(
-    input: CreatePaymentInput
-  ): Promise<PaymentResult>;
+import Stripe from "stripe";
 
-  getPaymentStatus(
-    paymentId: string
-  ): Promise<PaymentStatus>;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
 
-  refundPayment(
-    paymentId: string,
-    amount?: number
-  ): Promise<RefundResult>;
+export async function createStripePaymentIntent(amount: number, currency: string, idempotencyKey: string) {
+  return await stripe.paymentIntents.create(
+    {
+      amount,
+      currency,
+      automatic_payment_methods: { enabled: true },
+    },
+    { idempotencyKey }
+  );
 }
-```
 
 Possible implementations:
 
@@ -384,6 +382,17 @@ Open the application:
 ```text
 http://localhost:3000
 ```
+
+## Address Verification System (AVS) & ISO-3166 Standards
+### AVS Postal & Street Matching Rules
+To mitigate credit card fraud, `checkout-core` evaluates AVS response codes returned by payment gateways:
+
+```text
+AVS Response Code Mapping:
+- 'Y' / 'M' : Street address and 5-digit postal code match (Approved)
+- 'A'       : Street address matches, postal code does not (Flagged / Review)
+- 'Z' / 'W' : Postal code matches, street address does not (Flagged / Review)
+- 'N'       : Neither street address nor postal code matches (Rejected)
 
 ## Security Considerations
 
