@@ -1,0 +1,14 @@
+{
+  "name": "@deborahpanzer/checkout-orchestrator",
+  "version": "1.2.0",
+  "description": "Resilient checkout session orchestrator supporting multi-currency routing, webhook verification, and low-latency failover.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test"
+  },
+  "keywords": ["fintech", "checkout", "payments", "multi-currency", "failover", "idempotency"],
+  "author": "Deborah Panzer",
+  "license": "Apache-2.0"
+}
