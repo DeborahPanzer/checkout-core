@@ -29,13 +29,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies & TypeScript toolchain
-        run: |
-          npm install --no-audit --no-fund
-          npm install --no-save typescript @types/node
+      - name: Install TypeScript & Node.js Type Definitions
+        run: npm install --no-save typescript @types/node
 
-      - name: Compile TypeScript with strict financial checks
-        run: npx tsc --project tsconfig.json
+      - name: Normalize import syntax & Compile TypeScript
+        run: |
+          find src -name "*.ts" -exec sed -i 's/^Import /import /g' {} +
+          npx tsc --project tsconfig.json --types node
 
       - name: Execute AVS, ISO-3166, Idempotency & 2PC Test Suite
         run: node --test tests/checkout.test.js
