@@ -1,0 +1,41 @@
+name: Checkout Core CI & Compliance Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-engine:
+    name: Typecheck, Build & ACID Compliance (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies & TypeScript toolchain
+        run: |
+          npm install --no-audit --no-fund
+          npm install --no-save typescript @types/node
+
+      - name: Compile TypeScript with strict financial checks
+        run: npx tsc --project tsconfig.json
+
+      - name: Execute AVS, ISO-3166, Idempotency & 2PC Test Suite
+        run: node --test tests/checkout.test.js
