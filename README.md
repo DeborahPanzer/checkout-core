@@ -1,498 +1,80 @@
-<div align="center">
+# 💳 Checkout Core & Transaction Engine
 
-# 💳 checkout-core
-
-> High-reliability transactional payment processing engine with ACID compliance, Address Verification System (AVS), ISO-3166 region mapping, and cryptographic idempotency.
-
+[![Checkout Core CI & Compliance Suite](https://github.com/DeborahPanzer/checkout-core/actions/workflows/ci.yml/badge.svg)](https://github.com/DeborahPanzer/checkout-core/actions)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Architecture](https://img.shields.io/badge/Architecture-Two--Phase%20Commit%20%7C%20Idempotent-2ea44f)](#)
-[![Runtime](https://img.shields.io/badge/Runtime-TypeScript%20%2F%20Node.js-blue)](#)
-[![Sponsor](https://img.shields.io/badge/Sponsor-DeborahPanzer-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/DeborahPanzer)
+[![Architecture](https://img.shields.io/badge/Architecture-Two_Phase_Commit_%7C_Saga-emerald)](ARCHITECTURE.md)
+[![Compliance](https://img.shields.io/badge/Compliance-PCI--DSS_%7C_ISO_3166-purple)](SECURITY.md)
+[![Runtime](https://img.shields.io/badge/Runtime-TypeScript_%2F_Node.js-informational)](package.json)
 
-</div>
+**`checkout-core`** is an enterprise-grade, high-reliability transactional payment processing engine engineered for strict financial compliance, zero-sum double-entry accounting, and fault-tolerant multi-gateway execution.
 
 ---
 
-# Checkout Core & Transaction Engine Specification
-
-> A production-grade, highly reliable payment processing and checkout module engineered for high-availability marketplace platforms. Supports ACID-compliant transaction flows, AVS risk evaluation, ISO-3166 address normalization, webhook verification, and idempotent payment intent execution.
-
-
-## Features
-
-* Customer information form
-* Shipping address management
-* Shipping method selection
-* Order summary
-* Discount code support
-* Multiple payment methods
-* Client-side and server-side validation
-* Mock payment processing
-* Payment success and failure pages
-* Responsive checkout interface
-* Order status management
-
-## Technical Architecture
-
-The project separates the user interface, business logic, data access, and payment integration into independent layers.
-
-```mermaid
-flowchart TD
-    Customer[Customer] --> UI[Checkout Interface]
-    UI --> Validation[Client Validation]
-    Validation --> API[Checkout API]
-
-    API --> CheckoutService[Checkout Service]
-    CheckoutService --> PricingService[Pricing Service]
-    CheckoutService --> InventoryService[Inventory Service]
-    CheckoutService --> OrderService[Order Service]
-    CheckoutService --> PaymentAdapter[Payment Gateway Adapter]
-
-    PricingService --> Database[(Database)]
-    InventoryService --> Database
-    OrderService --> Database
-
-    PaymentAdapter --> Provider[Payment Provider]
-    Provider --> Webhook[Webhook Handler]
-    Webhook --> OrderService
-```
-
-## Architecture Layers
-
-### Presentation Layer
-
-The presentation layer displays the checkout interface and collects information from the customer.
-
-Its responsibilities include:
-
-* Rendering checkout steps
-* Collecting customer and shipping information
-* Displaying available payment methods
-* Showing the order summary
-* Performing basic form validation
-* Handling loading and error states
-* Redirecting customers after checkout
-
-The frontend must not be treated as a trusted source for product prices, discounts, shipping fees, or final totals.
-
-### API Layer
-
-The API layer acts as the communication point between the frontend and backend services.
-
-Its responsibilities include:
-
-* Validating incoming requests
-* Sanitizing customer input
-* Verifying the checkout session
-* Preventing duplicate submissions
-* Calling checkout services
-* Returning standardized responses
-* Handling errors securely
-
-Example endpoint:
-
-```http
-POST /api/checkout
-```
-
-Example request:
-
-```json
-{
-  "customer": {
-    "name": "Alex Morgan",
-    "email": "customer@example.com",
-    "phone": "+1-212-555-0199"
-  },
-  "shippingAddress": {
-    "address": "123 Main Street, Apt 4B",
-    "city": "New York",
-    "state": "NY",
-    "postalCode": "10001",
-    "country": "US"
-  },
-  "shippingMethod": "standard",
-  "paymentMethod": "mock_card",
-  "couponCode": "WELCOME10",
-  "items": [
-    {
-      "productId": "product-001",
-      "quantity": 2
-    }
-  ]
-}
-
-```
-
-### Checkout Service
-
-The checkout service coordinates the full checkout process.
-
-Typical workflow:
-
-1. Validate the customer information.
-2. Validate cart items.
-3. Load current product prices.
-4. Check product availability.
-5. Validate the discount code.
-6. Calculate the final order total.
-7. Create a pending order.
-8. Initialize the payment.
-9. Return the checkout result.
-
-The checkout service should coordinate other services without containing provider-specific payment logic.
-
-### Pricing Service
-
-The pricing service calculates all trusted order values on the server.
+## 🏛️ Architectural Pillars
 
 ```text
-Subtotal
-+ Shipping fee
-+ Taxes
-- Discounts
-= Final total
-```
-
-Example:
-
-```json
-{
-  "currency": "USD",
-  "subtotal": 1000000,
-  "shippingFee": 30000,
-  "tax": 0,
-  "discount": 100000,
-  "total": 930000
-}
-```
-
-Money should be stored and calculated using integers in the smallest supported currency unit to avoid floating-point errors.
-
-### Inventory Service
-
-The inventory service verifies whether the requested products and quantities are available.
-
-Possible inventory workflow:
-
-* Check inventory before creating an order.
-* Reserve inventory when an order is pending.
-* Deduct inventory after successful payment.
-* Release reserved inventory when payment fails or expires.
-
-### Order Service
-
-The order service manages order creation and order status transitions.
-
-Example order statuses:
-
-```text
-DRAFT
-PENDING_PAYMENT
-PAID
-PROCESSING
-COMPLETED
-PAYMENT_FAILED
-CANCELLED
-REFUNDED
-```
-
-Payment status should be stored separately from order status.
-
-Example payment statuses:
-
-```text
-PENDING
-AUTHORIZED
-SUCCEEDED
-FAILED
-CANCELLED
-REFUNDED
-```
-
-### Payment Gateway Adapter
-
-Payment provider integrations should be isolated behind a common interface.
-```ts
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2023-10-16" });
-
-export async function createStripePaymentIntent(amount: number, currency: string, idempotencyKey: string) {
-  return await stripe.paymentIntents.create(
-    {
-      amount,
-      currency,
-      automatic_payment_methods: { enabled: true },
-    },
-    { idempotencyKey }
-  );
-}
-
-Possible implementations:
-
-```text
-MockPaymentGateway
-StripePaymentGateway
-PayPalPaymentGateway
-BankTransferGateway
-```
-
-This architecture allows payment providers to be replaced without modifying the main checkout workflow.
-
-## Checkout Sequence
-
-```mermaid
-sequenceDiagram
-    participant Customer
-    participant Frontend
-    participant API
-    participant CheckoutService
-    participant OrderService
-    participant PaymentGateway
-    participant PaymentProvider
-
-    Customer->>Frontend: Submit checkout form
-    Frontend->>API: POST /api/checkout
-    API->>CheckoutService: Process checkout
-    CheckoutService->>CheckoutService: Validate cart and calculate total
-    CheckoutService->>OrderService: Create pending order
-    OrderService-->>CheckoutService: Return order
-    CheckoutService->>PaymentGateway: Create payment
-    PaymentGateway->>PaymentProvider: Initialize transaction
-    PaymentProvider-->>PaymentGateway: Return payment status
-    PaymentGateway-->>CheckoutService: Return payment result
-    CheckoutService-->>API: Return checkout response
-    API-->>Frontend: Order and payment result
-    Frontend-->>Customer: Show success or failure page
-```
-
-## Suggested Project Structure
-
-```text
-checkout-demo/
+[Client Request] ──► [Velocity Tracker / Anomaly Detector] ──► [Idempotency Engine (SHA-256)]
+                                                                         │
+                                                                         ▼
+[Stripe / Adyen Gateway] ◄── [Circuit Breaker / Failover] ◄── [ISO-3166 & AVS Normalizer]
+         │
+         ▼
+[2PC / Saga Orchestrator] ──► [Immutable Hash-Chained Ledger] ──► [Sanitized PCI Audit Logger]
+checkout-core/
+├── .github/workflows/ci.yml         # Automated TypeScript build & compliance CI matrix
 ├── src/
-│   ├── app/
-│   │   ├── checkout/
-│   │   ├── checkout-success/
-│   │   ├── checkout-failed/
-│   │   └── api/
-│   │       ├── checkout/
-│   │       ├── orders/
-│   │       └── webhooks/
-│   ├── components/
-│   │   ├── checkout-form/
-│   │   ├── customer-form/
-│   │   ├── shipping-address/
-│   │   ├── shipping-methods/
-│   │   ├── payment-methods/
-│   │   └── order-summary/
-│   ├── services/
-│   │   ├── checkout.service.ts
-│   │   ├── pricing.service.ts
-│   │   ├── inventory.service.ts
-│   │   ├── order.service.ts
-│   │   └── payment.service.ts
-│   ├── payments/
-│   │   ├── payment-gateway.interface.ts
-│   │   ├── mock-payment.gateway.ts
-│   │   └── stripe-payment.gateway.ts
-│   ├── repositories/
-│   ├── validators/
-│   ├── types/
-│   └── utils/
-├── public/
+│   ├── compliance/                  # ISO-3166 normalizer & AVS address verifier
+│   ├── core/                        # Idempotency engine, 2PC, Hash-chained ledger & Circuit breaker
+│   ├── logging/                     # PCI-DSS sanitized JSON audit logger
+│   ├── resilience/                  # Distributed Saga orchestrator
+│   ├── security/                    # Fraud velocity tracker, anomaly detector & token vault
+│   ├── settlement/                  # Merchant interchange and fee payout engine
+│   ├── webhooks/                    # Constant-time HMAC signature verifier & replay guard
+│   ├── services/                    # Core CheckoutService & PricingService (Minor-units)
+│   ├── types/                       # Domain DTOs and audit compliance contracts
+│   └── index.ts                     # Public API barrel export
 ├── tests/
-├── .env.example
-├── package.json
-└── README.md
-```
+│   └── checkout.test.js             # Zero-dependency native Node.js compliance test suite
+├── ARCHITECTURE.md                  # Formal mathematical invariants and system specs
+├── BENCHMARK.md                     # High-throughput concurrency & latency performance benchmarks
+└── SECURITY.md                      # Vulnerability reporting and cryptographic security policy
 
-## Example Checkout Response
+# Clone the repository
+git clone [https://github.com/DeborahPanzer/checkout-core.git](https://github.com/DeborahPanzer/checkout-core.git)
+cd checkout-core
 
-Successful checkout:
-
-```json
-{
-  "success": true,
-  "orderId": "order_123456",
-  "orderStatus": "PENDING_PAYMENT",
-  "paymentStatus": "PENDING",
-  "total": 930000,
-  "currency": "USD",
-  "redirectUrl": "/checkout-success?orderId=order_123456"
-}
-```
-
-Failed checkout:
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "OUT_OF_STOCK",
-    "message": "One or more products are no longer available."
-  }
-}
-```
-
-## Environment Variables
-
-Create a `.env` file based on `.env.example`.
-
-```env
-DATABASE_URL=
-PAYMENT_PROVIDER=mock
-PAYMENT_SECRET_KEY=
-PAYMENT_WEBHOOK_SECRET=
-APP_URL=http://localhost:3000
-```
-
-Do not expose secret keys in frontend code or commit them to the repository.
-
-## Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/your-username/checkout-demo.git
-cd checkout-demo
-```
-
-Install dependencies:
-
-```bash
+# Install dependencies and TypeScript compiler
 npm install
-```
+npm install --save-dev typescript @types/node
 
-Create the environment file:
+# Compile TypeScript engine
+npx tsc --project tsconfig.json
 
-```bash
-cp .env.example .env
-```
+# Run compliance test suite
+node --test tests/checkout.test.js
+import { CheckoutService } from './src/index';
 
-Start the development server:
+const checkoutService = new CheckoutService();
 
-```bash
-npm run dev
-```
+const session = checkoutService.processCheckout({
+  customer: {
+    name: 'Alice Vance',
+    email: 'alice.vance@example.com',
+    phone: '+12125550199',
+  },
+  shippingAddress: {
+    address: '350 Fifth Avenue',
+    city: 'New York',
+    state: 'NY',
+    postalCode: '10118',
+    country: 'USA',
+  },
+  shippingMethod: 'express',
+  paymentMethod: 'stripe_card',
+  couponCode: 'WELCOME10',
+  items: [{ productId: 'product-001', quantity: 2 }],
+  currency: 'USD',
+  idempotencyKey: 'idem_prod_998877',
+});
 
-Open the application:
-
-```text
-http://localhost:3000
-```
-
-## Address Verification System (AVS) & ISO-3166 Standards
-### AVS Postal & Street Matching Rules
-To mitigate credit card fraud, `checkout-core` evaluates AVS response codes returned by payment gateways:
-
-```text
-AVS Response Code Mapping:
-- 'Y' / 'M' : Street address and 5-digit postal code match (Approved)
-- 'A'       : Street address matches, postal code does not (Flagged / Review)
-- 'Z' / 'W' : Postal code matches, street address does not (Flagged / Review)
-- 'N'       : Neither street address nor postal code matches (Rejected)
-
-## Security Considerations
-
-* Recalculate all prices on the server.
-* Never trust totals submitted by the frontend.
-* Validate and sanitize all customer input.
-* Use HTTPS in production.
-* Keep payment credentials on the server.
-* Verify payment webhook signatures.
-* Use idempotency keys for checkout requests.
-* Rate-limit sensitive endpoints.
-* Avoid storing raw card information.
-* Log important payment and order events.
-* Do not expose internal error details to customers.
-
-## Idempotency
-
-Checkout requests should support idempotency to prevent duplicate orders or payments when a customer submits the form multiple times.
-
-Example header:
-
-```http
-Idempotency-Key: checkout-session-123456
-```
-
-The server should return the existing checkout result when the same key is submitted again.
-
-## Webhook Handling
-
-The payment provider webhook should be treated as the trusted source for asynchronous payment updates.
-
-Example endpoint:
-
-```http
-POST /api/webhooks/payment
-```
-
-Recommended webhook workflow:
-
-1. Receive the payment event.
-2. Verify the webhook signature.
-3. Check whether the event has already been processed.
-4. Update the payment status.
-5. Update the related order status.
-6. Record the event for auditing.
-7. Return a successful HTTP response.
-
-## Testing
-
-Run unit tests:
-
-```bash
-npm run test
-```
-
-Run integration tests:
-
-```bash
-npm run test:integration
-```
-
-Run end-to-end tests:
-
-```bash
-npm run test:e2e
-```
-
-Important scenarios to test:
-
-* Successful checkout
-* Invalid customer information
-* Invalid discount code
-* Out-of-stock product
-* Price change during checkout
-* Failed payment
-* Duplicate submission
-* Expired payment session
-* Invalid webhook signature
-* Successful refund
-
-## Future Improvements
-
-* Add guest and authenticated checkout
-* Add saved addresses
-* Add multiple currencies
-* Add tax calculation
-* Add real payment providers
-* Add abandoned checkout recovery
-* Add fraud detection
-* Add order confirmation emails
-* Add payment retry support
-* Add an administration dashboard
-* Add analytics and checkout conversion tracking
-
-## License
-
-This project is available under the Apache 2.0 License.
----
-
-## 💖 Sponsorship & Maintenance
-Maintaining financial integrations, edge-case unit tests, and mock sandbox environments requires continuous maintenance. If this architecture reference or codebase helps your team build resilient checkout flows:
-
-👉 **[Support ongoing open-source development via GitHub Sponsors](https://github.com/sponsors/DeborahPanzer)**
+console.log('Checkout Authorized:', session);
