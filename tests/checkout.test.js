@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { CheckoutService } = require('../dist/index.js');
+const {
+  CheckoutService,
+  ImmutableDoubleEntryLedger,
+  WebhookSignatureVerifier,
+  GatewayCircuitBreaker,
+} = require('../dist/index.js');
 
 const createValidPayload = (overrides = {}) => ({
   customer: {
@@ -84,4 +89,49 @@ test('Iso3166Normalizer & AvsVerifier: rejects invalid US state subdivision code
   });
 
   assert.throws(() => service.processCheckout(badPayload), /ISO-3166-2 Violation/);
+});
+
+test('ImmutableDoubleEntryLedger: enforces zero-sum balance and verifies SHA-256 hash chain', () => {
+  const ledger = new ImmutableDoubleEntryLedger();
+  const first = ledger.recordBalancedTransfer('ord_101', 'USD', 'acct_customer_receivable', 'acct_merchant_revenue', 9900);
+  const second = ledger.recordBalancedTransfer('ord_102', 'USD', 'acct_customer_receivable', 'acct_merchant_revenue', 4500);
+
+  assert.equal(first.sequence, 1);
+  assert.equal(second.sequence, 2);
+  assert.equal(second.previousHash, first.entryHash);
+  assert.equal(ledger.verifyChainIntegrity(), true);
+});
+
+test('WebhookSignatureVerifier: validates constant-time HMAC-SHA256 signatures and blocks replay attacks', () => {
+  const verifier = new WebhookSignatureVerifier();
+  const secret = 'whsec_test_cryptographic_secret_key_99';
+  const rawPayload = JSON.stringify({
+    id: 'evt_stripe_001',
+    type: 'payment_intent.succeeded',
+    data: { amountReceivedMinor: 9900 },
+  });
+
+  const now = 1760000000;
+  const validHeader = WebhookSignatureVerifier.signPayloadForTesting(rawPayload, secret, now);
+  const event = verifier.verifyAndParse(rawPayload, validHeader, secret, 300, now + 10);
+
+  assert.equal(event.id, 'evt_stripe_001');
+  assert.equal(event.signatureValid, true);
+
+  // Duplicate replay with same event.id must be suppressed
+  assert.throws(
+    () => verifier.verifyAndParse(rawPayload, validHeader, secret, 300, now + 15),
+    /Webhook Idempotency Guard/
+  );
+});
+
+test('GatewayCircuitBreaker: trips to OPEN after consecutive failures and routes to failover gateway', () => {
+  const breaker = new GatewayCircuitBreaker(2, 60000);
+  breaker.recordFailure('stripe-primary', 1000);
+  breaker.recordFailure('stripe-primary', 2000);
+
+  const routing = breaker.selectHealthyProvider('stripe-primary', 'adyen-failover', 2500);
+  assert.equal(routing.failoverTriggered, true);
+  assert.equal(routing.selectedProvider, 'adyen-failover');
+  assert.equal(routing.circuitState, 'OPEN');
 });
