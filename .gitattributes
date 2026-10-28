@@ -1,0 +1,9 @@
+# Normalize line endings across distributed environments
+* text=auto eol=lf
+
+# Classify formal specifications, ADRs, and test runners for GitHub Linguist
+# Ensures repository language statistics reflect 100% TypeScript core source code
+specs/** linguist-documentation=true
+docs/** linguist-documentation=true
+tests/** linguist-vendored=true
+*.md linguist-documentation=true
