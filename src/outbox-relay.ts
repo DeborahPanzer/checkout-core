@@ -11,6 +11,7 @@ export interface OutboxEventRecord {
   readonly status: OutboxDeliveryStatus;
 }
 
+
 export function computeExponentialBackoffWithJitter(
   attempt: number,
   baseDelayMs: number = 1000,
