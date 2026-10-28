@@ -5,9 +5,9 @@
 [![Checkout Core CI & Compliance Suite](https://github.com/DeborahPanzer/checkout-core/actions/workflows/ci.yml/badge.svg)](https://github.com/DeborahPanzer/checkout-core/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Architecture: Two-Phase Commit | Saga](https://img.shields.io/badge/Architecture-Two--Phase_Commit_%7C_Saga-2ea44f)](#)
-[![Compliance: PCI-DSS v4.0.1 | ISO-3166 | ISO-4217](https://img.shields.io/badge/Compliance-PCI--DSS_v4.0.1_%7C_ISO--4217-blueviolet)](#)
+[![Compliance: PCI-DSS v4.0.1 | ISO-4217](https://img.shields.io/badge/Compliance-PCI--DSS_v4.0.1_%7C_ISO--4217-blueviolet)](#)
 [![Formal Verification: TLA+](https://img.shields.io/badge/Formal_Verification-TLA%2B-informational)](#)
-[![Runtime: TypeScript 100%](https://img.shields.io/badge/Language-TypeScript_100%25-3178c6)](#)
+[![Language: TypeScript 100%](https://img.shields.io/badge/Language-TypeScript_100%25-3178c6)](#)
 [![Sponsor](https://img.shields.io/badge/Sponsor-DeborahPanzer-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/DeborahPanzer)
 
 </div>
@@ -21,33 +21,33 @@
 ## 🏛️ Architectural Execution Pipeline
 
 ```text
-[Client / Wallet Request]
-           │
-           ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 1. EDGE SECURITY & VELOCITY SHIELD                                      │
-│    • Sliding-Window BIN / IP Velocity Limiter (src/velocity-limiter.ts) │
-│    • AES-256-GCM PAN Tokenization & Luhn Check (src/tokenization-vault) │
-│    • EMV Network Token & TAVV Cryptogram (src/network-token-cryptogram) │
-└──────────────────────────────────┬──────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 2. COMPLIANCE, RISK & SMART ROUTING                                     │
-│    • ISO-3166 Address Normalization & AVS Risk Scoring                  │
-│    • EMV 3-D Secure 2 (3DS2) & PSD2 SCA Router (src/three-d-secure.ts)  │
-│    • US Reg II Least-Cost Debit Rail Selector (src/bin-routing-table)   │
-└──────────────────────────────────┬──────────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│ 3. DISTRIBUTED SAGA, ACID LEDGER & SETTLEMENT                           │
-│    • Hybrid 2PC Lock & LIFO Saga Orchestrator (src/saga-orchestrator)   │
-│    • Multi-Gateway Circuit Breaker Failover (src/circuit-breaker.ts)    │
-│    • ISO-4217 Multi-Currency Banker's Rounding (src/fx-conversion.ts)   │
-│    • Interchange++ & Scheme Fee Engine (src/interchange-plus.ts)        │
-│    • SHA-256 Merkle Tree Batch Audit & 3-Way Reconciliation             │
-└─────────────────────────────────────────────────────────────────────────┘
+                     [Client / Wallet Request]
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 1. EDGE SECURITY & VELOCITY SHIELD                               │
+│    • Sliding-Window Velocity Limiter (src/velocity-limiter.ts)   │
+│    • AES-256-GCM PAN Vault & Luhn Check (src/tokenization-vault) │
+│    • EMV Network Token & Cryptogram (src/network-token-cryptogram│
+└────────────────────────────────┬─────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 2. COMPLIANCE, RISK & SMART ROUTING                              │
+│    • ISO-3166 Address Normalization & AVS Risk Scoring           │
+│    • EMV 3-D Secure 2 & PSD2 SCA Router (src/three-d-secure.ts)  │
+│    • US Reg II Least-Cost Debit Selector (src/bin-routing-table) │
+└────────────────────────────────┬─────────────────────────────────┘
+                                 │
+                                 ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ 3. DISTRIBUTED SAGA, ACID LEDGER & SETTLEMENT                    │
+│    • Hybrid 2PC Lock & Saga Runner (src/saga-orchestrator.ts)    │
+│    • Multi-Gateway Circuit Breaker (src/circuit-breaker.ts)      │
+│    • ISO-4217 Banker's Rounding FX Engine (src/fx-conversion.ts) │
+│    • Interchange++ & Scheme Fee Engine (src/interchange-plus.ts) │
+│    • SHA-256 Merkle Batch Audit & 3-Way Reconciliation           │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -56,45 +56,46 @@
 
 ```text
 checkout-core/
-├── .github/workflows/ci.yml                   # Automated TypeScript strict build & CI compliance suite
+├── .github/workflows/ci.yml                   # Automated TypeScript strict build & CI suite
 ├── docs/
 │   ├── adr/
-│   │   ├── 0001-hybrid-2pc-saga-settlement.md # ADR-0001: Hybrid 2PC & Saga settlement architecture
-│   │   └── 0002-multi-acquirer-smart-routing-and-reg-ii.md # ADR-0002: Reg II least-cost debit routing
-│   └── PCI-DSS-V4-COMPLIANCE-MATRIX.md        # PCI-DSS v4.0.1 cryptographic control mapping
+│   │   ├── 0001-hybrid-2pc-saga-settlement.md # ADR-0001: Hybrid 2PC & Saga settlement
+│   │   └── 0002-multi-acquirer-smart-routing-and-reg-ii.md # ADR-0002: Reg II debit routing
+│   └── PCI-DSS-V4-COMPLIANCE-MATRIX.md        # PCI-DSS v4.0.1 cryptographic control matrix
 ├── specs/
-│   ├── PaymentStateMachine.tla                # TLA+ formal proof of No-Double-Capture invariant
-│   └── SettlementBatchReconciliation.tla      # TLA+ formal proof of Conservation-of-Funds invariant
+│   ├── PaymentStateMachine.tla                # TLA+ formal proof of No-Double-Capture
+│   └── SettlementBatchReconciliation.tla      # TLA+ formal proof of Conservation-of-Funds
 ├── src/
-│   ├── compliance/                            # ISO-3166 normalization & AVS postal/street verification
-│   ├── core/                                  # Idempotency engine, 2PC locks & hash-chained ledger
+│   ├── compliance/                            # ISO-3166 normalizer & AVS address verifier
+│   ├── core/                                  # Idempotency engine, 2PC & hash-chained ledger
 │   ├── logging/                               # PCI-DSS sanitized structured JSON audit logger
-│   ├── resilience/                            # Distributed failover & state recovery primitives
-│   ├── security/                              # Statistical Z-score anomaly & fraud velocity trackers
-│   ├── settlement/                            # Merchant settlement & fee calculation pipelines
-│   ├── webhooks/                              # Constant-time HMAC-SHA256 verifier & replay protection
+│   ├── resilience/                            # Distributed failover & recovery primitives
+│   ├── security/                              # Statistical Z-score anomaly & velocity tracker
+│   ├── settlement/                            # Merchant settlement & fee payout pipelines
+│   ├── webhooks/                              # Constant-time HMAC-SHA256 signature verifier
 │   ├── services/                              # Core CheckoutService & minor-unit PricingService
-│   ├── types/                                 # Domain DTOs and immutable audit contracts
-│   ├── bin-routing-table.ts                   # US Reg II PINless debit & conversion-weighted router
-│   ├── circuit-breaker.ts                     # State-driven (CLOSED/OPEN/HALF_OPEN) gateway breaker
-│   ├── fx-conversion.ts                       # ISO-4217 BigInt FX engine with Banker's Rounding
-│   ├── interchange-plus.ts                    # Interchange++, card scheme & Durbin cap fee calculator
-│   ├── iso8583-codec.ts                       # Acquirer response code classifier (Hard vs Soft decline)
-│   ├── iso20022-pain001.ts                    # ISO-20022 (pain.001.001.09) XML credit transfer builder
-│   ├── merkle-audit.ts                        # SHA-256 Merkle root batch sealer & O(log N) proofs
-│   ├── network-token-cryptogram.ts            # Apple Pay / Google Pay DPAN & TAVV cryptogram verifier
-│   ├── outbox-relay.ts                        # Transactional outbox relay with jittered backoff
-│   ├── reconciliation-matcher.ts              # Three-way reconciliation (Intent vs Capture vs Bank)
-│   ├── saga-orchestrator.ts                   # Distributed Saga runner with reverse LIFO compensation
-│   ├── three-d-secure.ts                      # EMV 3DS2 risk-based authentication & PSD2 SCA exemptions
-│   ├── tokenization-vault.ts                  # AES-256-GCM PAN vault & ISO/IEC 7812 Luhn validator
-│   ├── velocity-limiter.ts                    # Sliding-window BIN enumeration & carding defense
+│   ├── types/                                 # Domain DTOs and audit compliance contracts
+│   ├── bin-routing-table.ts                   # US Reg II PINless debit & smart rail selector
+│   ├── circuit-breaker.ts                     # State-driven (CLOSED/OPEN/HALF_OPEN) breaker
+│   ├── fx-conversion.ts                       # ISO-4217 BigInt FX with Banker's Rounding
+│   ├── interchange-plus.ts                    # Interchange++, scheme & Durbin cap calculator
+│   ├── iso8583-codec.ts                       # Acquirer response classifier (Hard vs Soft)
+│   ├── iso20022-pain001.ts                    # ISO-20022 (pain.001.001.09) XML builder
+│   ├── merkle-audit.ts                        # SHA-256 Merkle batch sealer & O(log N) proofs
+│   ├── network-token-cryptogram.ts            # Apple/Google Pay DPAN & TAVV cryptogram check
+│   ├── outbox-relay.ts                        # Transactional outbox relay & jittered backoff
+│   ├── reconciliation-matcher.ts              # 3-way reconciliation (Intent/Capture/Bank)
+│   ├── saga-orchestrator.ts                   # Distributed Saga runner with LIFO compensation
+│   ├── three-d-secure.ts                      # EMV 3DS2 RBA engine & PSD2 SCA exemptions
+│   ├── tokenization-vault.ts                  # AES-256-GCM PAN vault & ISO-7812 Luhn check
+│   ├── velocity-limiter.ts                    # Sliding-window BIN attack & carding defense
 │   └── index.ts                               # Public API barrel export
 ├── tests/
-│   └── checkout.test.js                       # Zero-dependency native Node.js cryptographic & ACID suite
-├── ARCHITECTURE.md                            # Formal ACID invariants, 2PC state machines & schemas
-├── BENCHMARK.md                               # High-throughput latency & concurrency telemetry
-├── CHANGELOG.md                               # Enterprise semantic release history
+│   └── checkout.test.js                       # Zero-dependency native Node.js test suite
+├── .gitattributes                             # Linguist classification & LF normalization
+├── ARCHITECTURE.md                            # Formal ACID invariants & 2PC state machines
+├── BENCHMARK.md                               # High-throughput concurrency & latency metrics
+├── CHANGELOG.md                               # Enterprise semantic release history (v1.1.0)
 ├── SECURITY.md                                # PCI-DSS v4.0.1 vulnerability disclosure policy
 ├── package.json                               # Package manifest & verification scripts
 └── tsconfig.json                              # Strict TypeScript compiler configuration
